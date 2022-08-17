@@ -144,7 +144,7 @@ std::vector<int> segment(const Eigen::MatrixXf & points,
 PYBIND11_MODULE(segmentation, m) {
     m.doc() = "LiDAR ground segmentation";
     
-    m.def("segment", &segment, "ground segmentation", 
+    m.def("segment", &segment, "ground segmentation",
           py::arg("points"), 
           py::arg("visualize")=false, 
           py::arg("max_dist_to_line")=0.1,

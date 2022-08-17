@@ -5,3 +5,9 @@ tmp/
 
 lib/grndseg/build
 lib/grndseg/*.so
+
+build/*
+*.so
+version.py
+.eggs/*
+
