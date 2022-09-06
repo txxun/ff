@@ -20,10 +20,10 @@ torch.random.manual_seed(0)
 np.random.seed(0)
 
 # NOTE: mini for debugging
-# nusc = NuScenes("v1.0-mini", "/data/nuscenes")
-nusc = NuScenes("v1.0-trainval", "/data/nuscenes")
+nusc = NuScenes("v1.0-mini", "/data/nuscenes")
+# nusc = NuScenes("v1.0-trainval", "/data/nuscenes")
 
-dataset_kwargs = {"n_input": 20, "n_samples": 100, "n_output": 7}
+dataset_kwargs = {"n_input": 20, "n_samples": 100, "n_output": 7, "train_on_all_sweeps": True}
 
 # NOTE: run this script once for train and once for val
 dataset = nuScenesDataset(nusc, "train", dataset_kwargs)
