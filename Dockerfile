@@ -38,7 +38,7 @@ RUN apt-get install -y \
         libcudnn8=${CUDNN_VERSION} \
         libnccl2=${NCCL_VERSION}
 
-RUN pip install tensorboard pybind11
+RUN pip install tensorboard pybind11 scikit-image
 
 RUN apt-get install pcl
 
