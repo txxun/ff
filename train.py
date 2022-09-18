@@ -23,7 +23,7 @@ def make_data_loaders(args):
         "train_on_all_sweeps": args.train_on_all_sweeps,
     }
     data_loader_kwargs = {
-        "pin_memory": False,  # NOTE
+        "pin_memory": True,  # NOTE
         "shuffle": True,
         "batch_size": args.batch_size,
         "num_workers": args.num_workers
@@ -93,7 +93,7 @@ def train(args):
         raise NotImplementedError(f"{args.model_type} not implemented yet.")
 
     #
-    model = model.to(device)
+    # model = model.to(device)
 
     # optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr_start)
@@ -112,49 +112,65 @@ def train(args):
     start_epoch, n_iter = resume_from_ckpts(ckpt_dir, model, optimizer, scheduler)
 
     # data parallel
-    model = nn.DataParallel(model)
+    # model = nn.DataParallel(model)
+    # model = nn.DataParallel(model, device_ids = [4, 5, 6, 7])
+    model = model.to(f'cuda:0')
 
     #
-    writer = SummaryWriter(f"{args.model_dir}/tf_logs")
+    # writer = SummaryWriter(f"{args.model_dir}/tf_logs")
     for epoch in range(start_epoch, args.num_epoch):
         for phase in ["train", "val"]:
             data_loader = data_loaders[phase]
             if phase == "train":
+                print("before train")
                 model.train()
+                print("after train")
             else:
                 model.eval()
 
             sum_val_loss = {}
             num_batch = len(data_loader)
+            print("num_batch ", num_batch)
             num_example = len(data_loader.dataset)
+            print("num_example ", num_example)
             for i, batch in enumerate(data_loader):
+                print("i ", i)
                 bs = len(batch["sample_data_tokens"])
-                if bs < device_count:
-                    print(f"Dropping the last batch of size {bs}")
-                    continue
+                #print("bs ", bs, ", device_count ", device_count)
+                #if bs < device_count:
+                #    print(f"Dropping the last batch of size {bs}")
+                #    continue
 
                 # use the following to prevent overfitting
                 if args.max_iters_per_epoch > 0 and i >= args.max_iters_per_epoch:
                     print(f"Breaking because of exceeding {args.max_iters_per_epoch} iterations.")
                     break
-
+                batch = batch.to("cuda:0")
+                print("phase ", phase)
                 optimizer.zero_grad()
                 with torch.set_grad_enabled(phase == "train"):
                     results = model(batch, "train")
                     loss = results["loss"].mean()
+                    print("loss: ", loss)
                     if phase == "train":
+                        print("before backward")
                         loss.backward()
+                        print("after backward")
                         optimizer.step()
+                        print("after step")
 
-                print(f"Phase: {phase}, Iter: {n_iter},",
-                      f"Epoch: {epoch}/{args.num_epoch},",
-                      f"Batch: {i}/{num_batch}",
-                      f"Loss: {loss.item():.6f}")
+                print("Phase: {phase}, Iter: {n_iter},",
+                      "Epoch: {epoch}/{args.num_epoch},",
+                      "Batch: {i}/{num_batch}",
+                      "Loss: {loss.item():.6f}")
 
                 if phase == "train":
                     n_iter += 1
+                    print("n_iter: ", n_iter)
                     for key in results:
-                        writer.add_scalar(f"{phase}/{key}", results[key].mean().item(), n_iter)
+                        print("before writer")
+                        # writer.add_scalar(f"{phase}/{key}", results[key].mean().item(), n_iter)
+                        print("after writer")
                 else:
                     for key in results:
                         if key not in sum_val_loss:
@@ -163,6 +179,7 @@ def train(args):
 
             if phase == "train":
                 ckpt_path = f"{ckpt_dir}/model_epoch_{epoch}.pth"
+                print("ckpt_path: ", ckpt_path)
                 torch.save({
                     "epoch": epoch,
                     "n_iter": n_iter,
@@ -170,14 +187,17 @@ def train(args):
                     "optimizer_state_dict": optimizer.state_dict(),
                     "scheduler_state_dict": scheduler.state_dict(),
                 }, ckpt_path, _use_new_zipfile_serialization=False)
+                print("after torch save")
             else:
                 for key in sum_val_loss:
                     mean_val_loss = sum_val_loss[key] / num_example
-                    writer.add_scalar(f"{phase}/{key}", mean_val_loss, n_iter)
+                    # writer.add_scalar(f"{phase}/{key}", mean_val_loss, n_iter)
 
+        print("before scheduler step")
         scheduler.step()
+        print("after scheduler step")
     #
-    writer.close()
+    # writer.close()
 
 
 if __name__ == "__main__":

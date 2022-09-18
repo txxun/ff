@@ -26,8 +26,8 @@ nusc = NuScenes("v1.0-mini", "/data/nuscenes")
 dataset_kwargs = {"n_input": 20, "n_samples": 100, "n_output": 7, "train_on_all_sweeps": True}
 
 # NOTE: run this script once for train and once for val
-dataset = nuScenesDataset(nusc, "train", dataset_kwargs)
-# dataset = nuScenesDataset(nusc, "val", dataset_kwargs)
+# dataset = nuScenesDataset(nusc, "train", dataset_kwargs)
+dataset = nuScenesDataset(nusc, "val", dataset_kwargs)
 
 data_loader_kwargs = {"pin_memory": False, "shuffle": True, "batch_size": 32, "num_workers": 4}
 data_loader = DataLoader(dataset, collate_fn=CollateFn, **data_loader_kwargs)
