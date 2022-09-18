@@ -67,9 +67,19 @@ def resume_from_ckpts(ckpt_dir, model, optimizer, scheduler):
         n_iter = 0
     return start_epoch, n_iter
 
+
+def data_to_device(batch, device):
+    datum = {}
+    for key, val in batch:
+        if isinstance(val, torch.Tensor):
+            datum[key] = val.to(device)
+        else:
+            datum[key] = val
+    return datum
+
 def train(args):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    device_count = torch.cuda.device_count()
+    # device_count = torch.cuda.device_count()
 
     #
     data_loaders = make_data_loaders(args)
@@ -110,11 +120,11 @@ def train(args):
     ckpt_dir = f"{args.model_dir}/ckpts"
     mkdir_if_not_exists(ckpt_dir)
     start_epoch, n_iter = resume_from_ckpts(ckpt_dir, model, optimizer, scheduler)
-
+    device = "cuda:0"
     # data parallel
     # model = nn.DataParallel(model)
     # model = nn.DataParallel(model, device_ids = [4, 5, 6, 7])
-    model = model.to(f'cuda:0')
+    model = model.to(device)
 
     #
     # writer = SummaryWriter(f"{args.model_dir}/tf_logs")
@@ -140,7 +150,7 @@ def train(args):
                 #if bs < device_count:
                 #    print(f"Dropping the last batch of size {bs}")
                 #    continue
-
+                batch = data_to_device(batch, device)
                 # use the following to prevent overfitting
                 if args.max_iters_per_epoch > 0 and i >= args.max_iters_per_epoch:
                     print(f"Breaking because of exceeding {args.max_iters_per_epoch} iterations.")
