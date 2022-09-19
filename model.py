@@ -51,7 +51,7 @@ class ConvBlock(nn.Module):
         self.block = nn.Sequential(*layers)
 
     def forward(self, x):
-        print("ConvBlock forward")
+        print(f"ConvBlock forward, {x.device} {next(self.block.parameters()).device}")
         return self.block(x)
 
 

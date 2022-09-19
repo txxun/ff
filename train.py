@@ -70,7 +70,7 @@ def resume_from_ckpts(ckpt_dir, model, optimizer, scheduler):
 
 def data_to_device(batch, device):
     datum = {}
-    for key, val in batch:
+    for key, val in batch.items():
         if isinstance(val, torch.Tensor):
             datum[key] = val.to(device)
         else:
@@ -155,7 +155,6 @@ def train(args):
                 if args.max_iters_per_epoch > 0 and i >= args.max_iters_per_epoch:
                     print(f"Breaking because of exceeding {args.max_iters_per_epoch} iterations.")
                     break
-                batch = batch.to("cuda:0")
                 print("phase ", phase)
                 optimizer.zero_grad()
                 with torch.set_grad_enabled(phase == "train"):
