@@ -24,8 +24,13 @@ class LiteModel(pl.LightningModule):
     def __init__(self, cfg, **kwargs):
         super(LiteModel, self).__init__()
         self.cfg = cfg
-        model_class = model_registry.get(self.cfg.model.model_name)
+        model_class = model_registry.get(self.cfg.model.name)
         self.model = model_class(**self.cfg.model.params)
+
+    def training_step(self, batch, batch_idx):
+        results = self.model(batch, "train")
+        loss = results["loss"].mean()
+        self.log("loss", loss)
 
     def train_dataloader(self):
         return make_data_loaders(self.cfg, "train")

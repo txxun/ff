@@ -41,9 +41,9 @@ def init_exp(cfg):
 if __name__ == '__main__':
     parser = command_line_parser()
     args = parser.parse_args()
-    init_exp(args.cfg)
-    model = LiteModel(args.cfg)
     cfg = load_configs(args.cfg)
+    init_exp(cfg)
+    model = LiteModel(cfg)
     trainer_params = cfg.get("trainer", {})
     trainer_params.setdefault("weights_save_path", cfg.exp_dir)
     trainer_params.setdefault("default_root_dir", cfg.exp_dir)

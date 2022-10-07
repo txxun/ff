@@ -1,7 +1,7 @@
 import errno
 import os.path
 
-from easydict import Easydict as edict
+from easydict import EasyDict as edict
 from argparse import ArgumentParser
 import shutil
 import yaml
