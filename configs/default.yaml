@@ -1,0 +1,46 @@
+
+trainer:
+  max_epochs: 100
+  devices: [0]
+  accelerator: gpu
+  benchmark: True
+  auto_scale_batch_size: True
+  strategy: "ddp" # for multiple gpus distributed mode.
+
+model:
+  name: "ObjShadowGuidedNeuralMotionPlanner"
+  params:
+    pc_range: [ -40.0, -70.4, -2.0, 40.0, 70.4, 3.4 ]
+    voxel_size: 0.2
+    n_input: 20
+    n_output: 7
+  loss:
+    nvf_loss_factor: 1.0
+    obj_loss_factor: 1.0
+    occ_loss_factor: 1.0
+  flow-mode: 3
+
+data:
+  train:
+    dataloader:
+      batch_size: 36
+      num_workers: 18
+      shuffle: True
+    dataset:
+      name: "nuscenes"
+      root: "/data/nuscenes"
+      version: "v1.0-trainval"
+
+  params:
+    n_samples: 1000
+    train_on_all_sweeps: False
+
+optim:
+  optimizer: "Adam"
+  lr: 5e-4
+  lr_epoch: 5
+  lr_decay: 0.1
+
+exp_dir: ""
+LOG:
+  LEVEL: "INFO"

@@ -26,3 +26,5 @@ xarray
 transforms3d
 pybind11
 open3d-python
+pytorch-lightning
+easydict

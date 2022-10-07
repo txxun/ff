@@ -441,3 +441,11 @@ class ObjShadowGuidedNeuralMotionPlanner(BaseNeuralMotionPlanner):
         if mode == "train":
             results["loss"] = results["margin_loss"]
         return results
+
+
+model_registry = {
+    VanillaNeuralMotionPlanner.__name__: VanillaNeuralMotionPlanner,
+    VFGuidedNeuralMotionPlanner.__name__: VFGuidedNeuralMotionPlanner,
+    ObjGuidedNeuralMotionPlanner.__name__: ObjGuidedNeuralMotionPlanner,
+    ObjShadowGuidedNeuralMotionPlanner.__name__: ObjShadowGuidedNeuralMotionPlanner
+}
