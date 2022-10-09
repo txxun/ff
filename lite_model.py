@@ -10,7 +10,9 @@ from model import model_registry
 
 def make_data_loaders(cfg, mode):
     assert mode in ['train', 'val', 'test']
-    dataset_kwargs = cfg.model.params
+    dataset_kwargs = {}
+    dataset_kwargs.update(cfg.model.params)
+    dataset_kwargs.update(cfg.data.params)
     dataset_cfg = cfg.data.get(mode, {}).dataset
     nusc = NuScenes(dataset_cfg.version, dataset_cfg.root)
     dataloader_params = cfg.data.get(mode, {}).dataloader
@@ -30,7 +32,9 @@ class LiteModel(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         results = self.model(batch, "train")
         loss = results["loss"].mean()
-        self.log("loss", loss)
+        for key, val in results.items():
+            self.log(key, val.item(), prog_bar=True, on_step=True, on_epoch=True)
+        return loss
 
     def train_dataloader(self):
         return make_data_loaders(self.cfg, "train")
@@ -48,7 +52,7 @@ class LiteModel(pl.LightningModule):
         return datum
 
     def configure_optimizers(self, use_pl_optimizer: Literal[True] = True):
-        if self.cfg.optim.name != "Adam":
+        if self.cfg.optim.optimizer != "Adam":
             raise NotImplementedError(f"Unknown type optimizer {self.cfg.optim.name}")
         optim = torch.optim.Adam(self.model.parameters(), lr=self.cfg.optim.lr)
         return {

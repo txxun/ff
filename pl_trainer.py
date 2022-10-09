@@ -25,7 +25,7 @@ class LiteProgressBar(TQDMProgressBar):
     def get_metrics(self, *args, **kwargs):
         items = super().get_metrics(*args, **kwargs)
         items.pop("v_num", None)
-
+        return items
 
 def init_exp(cfg):
     time_str = time.strftime("%Y%m%d-%H%M")

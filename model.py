@@ -9,33 +9,27 @@ import torch.nn.functional as F
 # JIT
 from torch.utils.cpp_extension import load
 voxelizer = load("voxelizer", sources=[
-    "lib/voxelize/voxelizer.cpp", "lib/voxelize/voxelizer.cu"], verbose=True)
+   "lib/voxelize/voxelizer.cpp", "lib/voxelize/voxelizer.cu"], verbose=True)
 
 def conv3x3(in_channels, out_channels, bias=False):
-    print("conv3x3")
     return nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=1,
                      padding=1, bias=bias)
 
 def deconv3x3(in_channels, out_channels, stride):
-    print("deconv3x3")
     return nn.ConvTranspose2d(in_channels, out_channels, kernel_size=3, stride=stride,
                               padding=1, output_padding=1, bias=False)
 
 def maxpool2x2(stride):
-    print("maxpool2x2")
     return nn.MaxPool2d(kernel_size=2, stride=stride, padding=0)
 
 def relu(inplace=True):
-    print("relu")
     return nn.ReLU(inplace=inplace)
 
 def bn(num_features):
-    print("bn")
     return nn.BatchNorm2d(num_features=num_features)
 
 class ConvBlock(nn.Module):
     def __init__(self, num_layer, in_channels, out_channels, max_pool=False):
-        print("ConvBlock init")
         super(ConvBlock, self).__init__()
 
         layers = []
@@ -51,13 +45,11 @@ class ConvBlock(nn.Module):
         self.block = nn.Sequential(*layers)
 
     def forward(self, x):
-        print(f"ConvBlock forward, {x.device} {next(self.block.parameters()).device}")
-        return self.block(x)
+        return self.block(x) 
 
 
 class Encoder(nn.Module):
     def __init__(self, in_channels, num_layers, num_filters):
-        print("encoder init")
         super(Encoder, self).__init__()
 
         self.in_channels = in_channels
@@ -75,7 +67,6 @@ class Encoder(nn.Module):
         self.block5 = ConvBlock(num_layers[4], _in_channels, num_filters[4])
 
     def forward(self, x):
-        print("encoder forward")
         N, C, H, W = x.shape
 
         # the first 4 blocks
@@ -100,7 +91,6 @@ class Encoder(nn.Module):
 
 class Decoder(nn.Module):
     def __init__(self, in_channels, out_channels):
-        print("decoder init")
         super(Decoder, self).__init__()
 
         self.in_channels = in_channels
@@ -122,7 +112,6 @@ class Decoder(nn.Module):
         )
 
     def forward(self, x):
-        print("decoder forward")
         return self.block(x)
 
 
@@ -130,7 +119,6 @@ class BaseNeuralMotionPlanner(nn.Module):
     MAX_COST = 1000.0
 
     def __init__(self, n_input, n_output, pc_range, voxel_size):
-        print("init base")  
         super(BaseNeuralMotionPlanner, self).__init__()
 
         self.n_input = n_input
@@ -159,7 +147,6 @@ class BaseNeuralMotionPlanner(nn.Module):
         self.imitation_decoder = Decoder(self.encoder.out_channels, self._out_channels)
 
     def _compute_L2(self, batch):
-        print("base compute l2")
         # 1000 sampled trajectories vs 1 gt trajectory
         st, gt = batch["sampled_trajectories"], batch["gt_trajectories"]
 
@@ -167,11 +154,9 @@ class BaseNeuralMotionPlanner(nn.Module):
         return torch.sqrt(((st[:, :, :, :2] - gt[:, None, :, :2]) ** 2).sum(dim=-1))
 
     def _normalize(self, points):
-        print("base normalize")
         points[:, :, :3] = (points[:, :, :3] - self.offset) / self.scaler
 
     def _discretize(self, trajectories):
-        print("base discretize")
         # input: N x n_samples x n_output x 3 (x, y, theta)
         # output: N x n_samples x n_output (yi, xi)
         if trajectories.ndim == 3:  # ground truth trajectories
@@ -194,29 +179,23 @@ class BaseNeuralMotionPlanner(nn.Module):
         return yi, xi
 
     def prepare_input(self, batch):
-        print("base prepare input")
         # extract data
         input_points = batch["input_points"]
-
         # convert metric coordinates to grid coordinates
         self._normalize(input_points)
 
         # voxelize input LiDAR sweeps
         input_tensor = voxelizer.voxelize(input_points, self.input_grid)
         input_tensor = input_tensor.reshape((-1, self._in_channels, self.n_length, self.n_width))
-
         return input_tensor
 
     def compute_cost_maps(self, feat):
-        print("base compute cost maps")
         return
 
     def clamp_cost_maps(self, C):
-        print("bsae clamp cost maps")
         return torch.clamp(C, min=-self.MAX_COST, max=self.MAX_COST)
 
     def evaluate_samples(self, batch, C):
-        print("base evaluate samples")
         # parse input
         sampled_trajectories = batch["sampled_trajectories"]
 
@@ -235,7 +214,6 @@ class BaseNeuralMotionPlanner(nn.Module):
         return CS
 
     def evaluate_expert(self, batch, C):
-        print("base evaluate expert")
         # parse input
         gt_trajectories = batch["gt_trajectories"]
 
@@ -258,7 +236,6 @@ class BaseNeuralMotionPlanner(nn.Module):
         return
 
     def select_best_plans(self, batch, CS, k=1):
-        print("base select best plans")
         # select top 5 (lowest) cost trajectories
         CC, KK = torch.topk(CS.sum(-1), k, dim=-1, largest=False)
 
@@ -266,12 +243,10 @@ class BaseNeuralMotionPlanner(nn.Module):
         return KK
 
     def forward(self, batch, mode="train"):
-        print("base forward")
         results = {}
 
         # voxelize input lidar sweeps
         _input = self.prepare_input(batch)
-
         # extract backbone feature maps
         feat = self.encoder(_input)
 
@@ -302,6 +277,11 @@ class BaseNeuralMotionPlanner(nn.Module):
             results["best_plans"] = self.select_best_plans(batch, CS, 5)
 
         return results
+    
+    def to(self, *args, **kwargs):
+        super(ConvBlock, self).to(*args, **kwargs)
+        torch.cuda.synchronize()
+        return self
 
 
 class VanillaNeuralMotionPlanner(BaseNeuralMotionPlanner):
@@ -403,11 +383,9 @@ class ObjShadowGuidedNeuralMotionPlanner(BaseNeuralMotionPlanner):
     OBJ_COST_FACTOR = 200.0
 
     def __init__(self, n_input, n_output, pc_range, voxel_size):
-        print("model init")
         super(ObjShadowGuidedNeuralMotionPlanner, self).__init__(n_input, n_output, pc_range, voxel_size)
 
     def compute_cost_margins(self, batch):
-        print("model compute cost margins")
         # incorporate visible freespace as part of the cost margin
         # obj_maps = batch["obj_maps"]
         obj_maps = batch["obj_shadows"]
@@ -432,11 +410,9 @@ class ObjShadowGuidedNeuralMotionPlanner(BaseNeuralMotionPlanner):
         return (obj_cost + l2_cost)
 
     def compute_cost_maps(self, feat):
-        print("model compute cost maps")
         return self.imitation_decoder(feat)
 
     def forward(self, batch, mode):
-        print("model forward")
         results = super(ObjShadowGuidedNeuralMotionPlanner, self).forward(batch, mode)
         if mode == "train":
             results["loss"] = results["margin_loss"]

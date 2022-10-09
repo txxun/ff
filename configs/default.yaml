@@ -5,7 +5,7 @@ trainer:
   accelerator: gpu
   benchmark: True
   auto_scale_batch_size: True
-  strategy: "ddp" # for multiple gpus distributed mode.
+  # strategy: "ddp" # for multiple gpus distributed mode.
 
 model:
   name: "ObjShadowGuidedNeuralMotionPlanner"
@@ -23,13 +23,13 @@ model:
 data:
   train:
     dataloader:
-      batch_size: 36
-      num_workers: 18
+      batch_size: 1
+      num_workers: 1
       shuffle: True
     dataset:
       name: "nuscenes"
       root: "/data/nuscenes"
-      version: "v1.0-trainval"
+      version: "v1.0-mini"
 
   params:
     n_samples: 1000
@@ -37,10 +37,11 @@ data:
 
 optim:
   optimizer: "Adam"
-  lr: 5e-4
+  lr: 5.0e-4
   lr_epoch: 5
   lr_decay: 0.1
 
+exp_id: "obj_shadow_guided"
 exp_dir: ""
 LOG:
   LEVEL: "INFO"
