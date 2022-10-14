@@ -33,7 +33,7 @@ class LiteModel(pl.LightningModule):
         results = self.model(batch, "train")
         loss = results["loss"].mean()
         for key, val in results.items():
-            self.log(key, val.item(), prog_bar=True, on_step=True, on_epoch=True)
+            self.log(key, val, prog_bar=True, on_step=True, on_epoch=True)
         return loss
 
     def train_dataloader(self):

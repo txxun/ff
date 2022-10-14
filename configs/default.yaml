@@ -1,10 +1,11 @@
 
 trainer:
   max_epochs: 100
-  devices: [0]
+  devices: [1]
   accelerator: gpu
   benchmark: True
   auto_scale_batch_size: True
+  strategy: "ddp"
   # strategy: "ddp" # for multiple gpus distributed mode.
 
 model:
@@ -23,8 +24,8 @@ model:
 data:
   train:
     dataloader:
-      batch_size: 1
-      num_workers: 1
+      batch_size: 8
+      num_workers: 4
       shuffle: True
     dataset:
       name: "nuscenes"

@@ -270,18 +270,13 @@ class BaseNeuralMotionPlanner(nn.Module):
             L, _ = ((F.relu(CG - CS + CM)).sum(dim=-1)).max(dim=-1)
 
             # return the margin loss
-            results["margin_loss"] = L
+            results["margin_loss"] = L.mean()
 
         else:
             results["cost"] = C
             results["best_plans"] = self.select_best_plans(batch, CS, 5)
 
-        return results
-    
-    def to(self, *args, **kwargs):
-        super(ConvBlock, self).to(*args, **kwargs)
-        torch.cuda.synchronize()
-        return self
+        return results 
 
 
 class VanillaNeuralMotionPlanner(BaseNeuralMotionPlanner):
